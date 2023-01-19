@@ -1,4 +1,10 @@
 import express from "express";
+import {
+  getErrorResponseData,
+  getFilteredAndSortedUsersLogin,
+  getResponseData,
+  getUserDataWithoutPassword,
+} from "./helpers";
 import { User } from "./user";
 import { validateBody } from "./validation";
 
@@ -15,12 +21,12 @@ app.get("/users/:id", (req, res) => {
 
   if (!user) {
     console.log(`User ${req.params.id} not found`);
-    return res.status(404).send({ message: "User not found" });
+    return res.status(404).json(getErrorResponseData("User not found"));
   }
 
   console.log(`User ${user.id} has been found`);
 
-  res.send(user);
+  res.json({ success: true, data: getUserDataWithoutPassword(user) });
 });
 
 app.post("/users", validateBody, (req, res) => {
@@ -32,13 +38,13 @@ app.post("/users", validateBody, (req, res) => {
 
   console.log(`User ${user.id} has been added`);
 
-  res.send(user);
+  res.json(getResponseData(getUserDataWithoutPassword(user)));
 });
 
 app.put("/users/search/:id", validateBody, (req, res) => {
   const user = users.find((user) => user.id === req.params.id);
   if (!user) {
-    return res.status(404).send({ message: "User not found" });
+    return res.status(404).json(getErrorResponseData("User not found"));
   }
   const { login, password, age } = req.body;
   console.log(
@@ -48,7 +54,7 @@ app.put("/users/search/:id", validateBody, (req, res) => {
   user.login = login;
   user.password = password;
   user.age = age;
-  res.send(user);
+  res.json(getResponseData(getUserDataWithoutPassword(user)));
   console.log(`new user data: ${JSON.stringify(user)}`);
 });
 
@@ -60,19 +66,19 @@ app.get("/users", (req, res) => {
   );
 
   if (!loginSubstring) {
-    const limitedUsers = users.slice(0, limit as number);
-    return res.send(limitedUsers);
+    const limitedUsers = users
+      .slice(0, limit as number)
+      .map((user) => user.login);
+    return res.json(getResponseData(limitedUsers));
   }
 
-  const filteredUsers = users.filter(
-    (user) => user.login.includes(loginSubstring as string) && !user.isDeleted
+  const usersLoginArray = getFilteredAndSortedUsersLogin(
+    users,
+    loginSubstring as string,
+    limit as number
   );
-  const sortedUsers = filteredUsers.sort((a, b) =>
-    a.login.localeCompare(b.login)
-  );
-  const limitedUsers = sortedUsers.slice(0, limit as number);
 
-  res.send(limitedUsers);
+  res.json(getResponseData(usersLoginArray));
 });
 
 app.delete("/users", (req, res) => {
@@ -80,7 +86,7 @@ app.delete("/users", (req, res) => {
   const user = users.find((user) => user.id === id);
 
   if (!user) {
-    return res.status(404).send({ message: "User not found" });
+    return res.status(404).json(getErrorResponseData("User not found"));
   }
 
   user.isDeleted = true;
@@ -89,7 +95,7 @@ app.delete("/users", (req, res) => {
     `DELETE /users request performed. User ${user.id} has been deleted`
   );
 
-  res.send(user);
+  res.json(getResponseData(getUserDataWithoutPassword(user)));
 });
 
 app.listen(PORT, () => {
