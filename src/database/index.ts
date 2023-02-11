@@ -1,21 +1,23 @@
 import { Client, Pool } from "pg";
-export const DB_NAME = "mydb";
+import { config } from "../config";
+
 const logError = (err: Error) => {
   console.log(err);
 };
+
 export const createDB = () => {
   const client = new Client({
-    host: "localhost",
-    port: 5432,
+    host: config.DATA_BASE_HOST,
+    port: config.DATA_BASE_PORT,
   });
-
+  console.log({ config });
   client.connect().then(() => {
     client
-      .query(`DROP DATABASE IF EXISTS ${DB_NAME};`)
+      .query(`DROP DATABASE IF EXISTS ${config.DATA_BASE_NAME};`)
       .then(() => {
-        client.query(`CREATE DATABASE ${DB_NAME};`).then(() => {
+        client.query(`CREATE DATABASE ${config.DATA_BASE_NAME};`).then(() => {
           const pool = new Pool({
-            database: DB_NAME,
+            database: config.DATA_BASE_NAME,
             host: "localhost",
             port: 5432,
           });

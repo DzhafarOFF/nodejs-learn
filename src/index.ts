@@ -1,6 +1,7 @@
 import express from "express";
 import { Pool } from "pg";
-import { createDB, DB_NAME } from "./database";
+import { config } from "./config";
+import { createDB } from "./database";
 import {
   getErrorResponseData,
   getFilteredAndSortedUsersLogin,
@@ -16,7 +17,7 @@ const PORT = 3000;
 const app = express();
 
 const pool = new Pool({
-  database: DB_NAME,
+  database: config.DATA_BASE_NAME,
   host: "localhost",
   port: 5432,
 });
