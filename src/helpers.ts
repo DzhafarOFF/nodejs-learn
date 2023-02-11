@@ -6,7 +6,7 @@ export const getFilteredAndSortedUsersLogin = (
   limit: number
 ) => {
   return users
-    .filter((user) => user.login.includes(searchString) && !user.isDeleted)
+    .filter((user) => user.login.includes(searchString) && !user.is_deleted)
     .sort((a, b) => a.login.localeCompare(b.login))
     .slice(0, limit)
     .map((user) => user.login);

@@ -5,13 +5,13 @@ export class User {
   login: string;
   password: string;
   age: number;
-  isDeleted: boolean;
+  is_deleted: boolean;
 
   constructor(login: string, password: string, age: number) {
     this.id = uuidv4();
     this.login = login;
     this.password = password;
     this.age = age;
-    this.isDeleted = false;
+    this.is_deleted = false;
   }
 }
