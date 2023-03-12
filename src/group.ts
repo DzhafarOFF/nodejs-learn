@@ -1,6 +1,12 @@
-type Permission = "READ" | "WRITE" | "DELETE" | "SHARE" | "UPLOAD_FILES";
+export enum Permission {
+  READ = "READ",
+  WRITE = "WRITE",
+  DELETE = "DELETE",
+  SHARE = "SHARE",
+  UPLOAD_FILES = "UPLOAD_FILES",
+}
 
-interface Group {
+export interface Group {
   id: string;
   name: string;
   permissions: Permission[];

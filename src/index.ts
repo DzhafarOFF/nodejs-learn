@@ -1,14 +1,21 @@
 import express from "express";
 import { Pool } from "pg";
 import { config } from "./config";
-import { createDB } from "./database";
+import {
+  addGroup,
+  addUserTransaction,
+  createDB,
+  removeGroupTransaction,
+  removeUserTransaction,
+  selectUserByIdQuery,
+} from "./database";
 import {
   getErrorResponseData,
   getFilteredAndSortedUsersLogin,
   getResponseData,
   getUserDataWithoutPassword,
 } from "./helpers";
-import { validateBody } from "./validation";
+import { validateGroupBody, validateUserBody } from "./validation";
 
 createDB();
 
@@ -62,7 +69,7 @@ app.get("/users", (req, res) => {
 app.get("/users/:id", (req, res) => {
   const id = parseInt(req.params.id);
 
-  pool.query("SELECT * FROM users WHERE id = $1", [id], (error, results) => {
+  pool.query(selectUserByIdQuery, [id], (error, results) => {
     if (error) {
       throw error;
     }
@@ -84,27 +91,13 @@ app.get("/users/:id", (req, res) => {
   });
 });
 
-app.post("/users", validateBody, (req, res) => {
-  const { login, password, age } = req.body;
+app.post("/users", validateUserBody, async (req, res) => {
+  const user = await addUserTransaction(req.body);
 
-  pool.query(
-    "INSERT INTO users (login, password, age, is_deleted) VALUES ($1, $2, $3, false) RETURNING *",
-    [login, password, age],
-    (error, results) => {
-      if (error) {
-        throw error;
-      }
-
-      const user = results.rows[0];
-
-      console.log(`User ${user.id} has been added`);
-
-      res.status(201).json(getResponseData(getUserDataWithoutPassword(user)));
-    }
-  );
+  res.status(201).json(getResponseData(getUserDataWithoutPassword(user)));
 });
 
-app.put("/users/:id", validateBody, (req, res) => {
+app.put("/users/:id", validateUserBody, (req, res) => {
   const id = parseInt(req.params.id);
 
   const { login, password, age } = req.body;
@@ -125,7 +118,7 @@ app.put("/users/:id", validateBody, (req, res) => {
 
       console.log(
         `User ${user.id} has been updated`,
-        `old user data: ${JSON.stringify(user)}`
+        `new user data: ${JSON.stringify(user)}`
       );
 
       res.json(getResponseData(getUserDataWithoutPassword(user)));
@@ -133,30 +126,100 @@ app.put("/users/:id", validateBody, (req, res) => {
   );
 });
 
-app.delete("/users/:id", (req, res) => {
+app.delete("/users/:id", async (req, res) => {
   const id = parseInt(req.params.id);
 
+  const deletedUser = await removeUserTransaction(id);
+  if (!deletedUser) {
+    return res.status(404).json(getErrorResponseData("User not found"));
+  }
+
+  console.log(
+    `DELETE /users request performed. User ${deletedUser.id} has been deleted(soft)`
+  );
+
+  res.json(getResponseData(getUserDataWithoutPassword(deletedUser)));
+});
+
+app.get("/groups", (_, res) => {
+  pool.query("SELECT * FROM groups", (error, results) => {
+    if (error) {
+      throw error;
+    }
+
+    const groups = results.rows;
+    res.json(getResponseData(groups));
+    console.log({ groups });
+  });
+});
+
+app.get("/groups", (_, res) => {
+  pool.query("SELECT * FROM groups", (error, results) => {
+    if (error) {
+      throw error;
+    }
+
+    const groups = results.rows;
+    res.json(getResponseData(groups));
+    console.log({ groups });
+  });
+});
+
+app.get("/groups/:id", (req, res) => {
+  const id = parseInt(req.params.id);
+  pool.query("SELECT * FROM groups WHERE id = $1", [id], (error, results) => {
+    if (error) {
+      throw error;
+    }
+    const group = results.rows[0];
+    if (!group) {
+      console.log(`Group ${id} not found`);
+      return res.status(404).json(getErrorResponseData("Group not found"));
+    }
+
+    console.log(`Group ${group.id} has been found`);
+
+    res.status(200).json(getResponseData(group));
+  });
+});
+
+app.post("/groups", validateGroupBody, async (req, res) => {
+  const group = await addGroup(req.body);
+  res.status(201).json(getResponseData(group));
+});
+
+app.put("/groups/:id", validateGroupBody, (req, res) => {
+  const id = parseInt(req.params.id);
+  const { name, permissions } = req.body;
   pool.query(
-    "UPDATE users SET is_deleted = true WHERE id = $1 RETURNING *",
-    [id],
+    "UPDATE groups SET name = $1, permissions = $2 WHERE id = $3 RETURNING *",
+    [name, permissions, id],
     (error, results) => {
       if (error) {
         throw error;
       }
 
-      const user = results.rows[0];
-
-      if (!user) {
-        return res.status(404).json(getErrorResponseData("User not found"));
-      }
+      const group = results.rows[0];
 
       console.log(
-        `DELETE /users request performed. User ${user.id} has been deleted`
+        `Group with id:${group.id} and name: ${group.name} has been updated`
       );
 
-      res.json(getResponseData(getUserDataWithoutPassword(user)));
+      res.status(200).json(getResponseData(group));
     }
   );
+});
+
+app.delete("/groups/:id", async (req, res) => {
+  const id = parseInt(req.params.id);
+  const deletedGroup = await removeGroupTransaction(id);
+  if (deletedGroup) {
+    console.log(
+      `DELETE /groups request performed. Group ${deletedGroup.id} has been deleted`
+    );
+
+    res.status(200).json();
+  }
 });
 
 app.listen(PORT, () => {
