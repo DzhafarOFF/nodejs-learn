@@ -58,7 +58,11 @@ app.get("/users/:id", async (req, res) => {
 });
 
 app.post("/users", validateUserBody, async (req, res) => {
-  const user = await UserModel.addUser(req.body, "2");
+  const groupsResult = await GroupModel.getGroups();
+
+  const readAndWriteGroup = groupsResult[1]; // default assignment to read and write group
+
+  const user = await UserModel.addUser(req.body, readAndWriteGroup.id);
 
   res.status(201).json(getResponseData(getUserDataWithoutPassword(user)));
 });
@@ -89,9 +93,7 @@ app.delete("/users/:id", async (req, res) => {
     return res.status(404).json(getErrorResponseData("User not found"));
   }
 
-  console.log(
-    `DELETE /users request performed. User ${deletedUser.id} has been deleted(soft)`
-  );
+  `DELETE /users request performed. User ${deletedUser.id} has been deleted(soft)`;
 
   res.json(getResponseData(getUserDataWithoutPassword(deletedUser)));
 });

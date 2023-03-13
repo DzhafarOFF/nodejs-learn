@@ -24,8 +24,6 @@ export class GroupModel {
       await pool.query(insertPredefinedGroups);
     } catch (e) {
       throw e;
-    } finally {
-      await pool.end();
     }
   }
 
@@ -33,7 +31,6 @@ export class GroupModel {
     const { name, permissions } = group;
 
     try {
-      await pool.connect();
       const groupQueryResult = await pool.query<IGroup>(
         insertGroupsTableQuery,
         [name, permissions]
@@ -45,14 +42,11 @@ export class GroupModel {
       return group;
     } catch (err) {
       throw err;
-    } finally {
-      await pool.end();
     }
   }
 
   static async deleteGroup(groupId: string): Promise<IGroup> {
     try {
-      await pool.connect();
       await pool.query("BEGIN");
       const deletGroupQueryResult = await pool.query<IGroup>(
         deleteGroupByIdQuery,
@@ -66,20 +60,15 @@ export class GroupModel {
     } catch (err) {
       await pool.query("ROLLBACK");
       throw err;
-    } finally {
-      await pool.end();
     }
   }
   static async getGroups() {
     try {
-      await pool.connect();
       const groupQueryResult = await pool.query<IGroup>(selectAllGroups);
 
       return groupQueryResult.rows;
     } catch (err) {
       throw err;
-    } finally {
-      await pool.end();
     }
   }
 }

@@ -17,8 +17,6 @@ export const createDB = async () => {
     port: config.DATA_BASE_PORT,
   });
 
-  console.log({ config });
-
   try {
     await client.connect().catch(logError);
     await client.query(dropDatabaseQueryIfExist).catch(logError);

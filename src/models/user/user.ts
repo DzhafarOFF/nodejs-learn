@@ -28,34 +28,31 @@ export class UserModel {
       await pool.query(insertPredefinedUsersQuery);
     } catch (e) {
       throw e;
-    } finally {
-      await pool.end();
     }
   }
 
-  static async addUser(user: IUserInputDTO, groupId: string): Promise<IUser> {
-    const { login, password, age } = user;
+  static async addUser(
+    userInput: IUserInputDTO,
+    groupId: string
+  ): Promise<IUser> {
+    const { login, password, age } = userInput;
 
     try {
-      await pool.connect();
-      await pool.query("BEGIN");
       const userQueryResult = await pool.query<IUser>(insertUserQuery, [
         login,
         password,
         age,
       ]);
+
       const user = userQueryResult.rows[0];
-      await UserGroupModel.addUserGroup(user.id, groupId);
-      await pool.query("COMMIT");
+
+      await UserGroupModel.addUserToGroup(user.id, groupId);
 
       console.log(`IUser ${user.id} has been added`);
 
       return user;
     } catch (err) {
-      await pool.query("ROLLBACK");
       throw err;
-    } finally {
-      await pool.end();
     }
   }
 
@@ -66,7 +63,6 @@ export class UserModel {
     const { login, password, age } = userInput;
 
     try {
-      await pool.connect();
       const queryResult = await pool.query(updateUserQuery, [
         login,
         password,
@@ -77,14 +73,11 @@ export class UserModel {
       return queryResult.rows[0];
     } catch (e) {
       throw e;
-    } finally {
-      await pool.end();
     }
   }
 
   static async deleteUser(userId: string): Promise<IUser> {
     try {
-      await pool.connect();
       await pool.query("BEGIN");
       const deletUserQueryResult = await pool.query<IUser>(
         removeUserSoftByIdQuery,
@@ -93,7 +86,7 @@ export class UserModel {
       await UserGroupModel.removeUserGroupByUserId(userId);
       await pool.query("COMMIT");
 
-      console.log("User removed(soft) successfully!");
+      console.log(`User ${userId} removed(soft) successfully!`);
 
       const deletedUser = deletUserQueryResult.rows[0];
 
@@ -101,22 +94,17 @@ export class UserModel {
     } catch (err) {
       await pool.query("ROLLBACK");
       throw err;
-    } finally {
-      await pool.end();
     }
   }
 
   static async getUserById(id: string): Promise<IUser> {
     try {
-      await pool.connect();
       const queryResults = await pool.query(selectUserByIdQuery, [id]);
       const user = queryResults.rows[0];
 
       return user;
     } catch (e) {
       throw e;
-    } finally {
-      await pool.end();
     }
   }
 
@@ -125,7 +113,6 @@ export class UserModel {
     limit?: number
   ): Promise<string[]> {
     try {
-      await pool.connect();
       const queryResults = await pool.query(selectAllUsersSortedByIdQuery);
       const users = queryResults.rows;
       if (!loginSubstring) {
@@ -145,21 +132,16 @@ export class UserModel {
       }
     } catch (e) {
       throw e;
-    } finally {
-      await pool.end();
     }
   }
 
   static async getAllUsers(): Promise<IUser[]> {
     try {
-      await pool.connect();
       const queryResults = await pool.query(selectAllUsers);
       const users = queryResults.rows;
       return users;
     } catch (e) {
       throw e;
-    } finally {
-      await pool.end();
     }
   }
 }
