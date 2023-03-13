@@ -2,19 +2,13 @@ import express from "express";
 import { Pool } from "pg";
 import { config } from "./config";
 import {
-  addGroup,
-  addUserTransaction,
-  createDB,
-  removeGroupTransaction,
-  removeUserTransaction,
-  selectUserByIdQuery,
-} from "./database";
-import {
   getErrorResponseData,
-  getFilteredAndSortedUsersLogin,
   getResponseData,
   getUserDataWithoutPassword,
 } from "./helpers";
+import { createDB } from "./loaders";
+import { GroupModel } from "./models/group";
+import { UserModel } from "./models/user";
 import { validateGroupBody, validateUserBody } from "./validation";
 
 createDB();
@@ -31,105 +25,66 @@ const pool = new Pool({
 
 app.use(express.json());
 
-app.get("/users", (req, res) => {
+app.get("/users", async (req, res) => {
   const { loginSubstring, limit = 20 } = req.query;
 
   console.log(
     `GET /users request performed with queries loginSubstring: ${loginSubstring}; limit: ${limit}`
   );
 
-  pool.query(
-    "SELECT * FROM users WHERE is_deleted = false ORDER BY id ASC",
-    (error, results) => {
-      if (error) {
-        throw error;
-      }
-
-      const users = results.rows;
-
-      if (!loginSubstring) {
-        const limitedUsers = users
-          .slice(0, limit as number)
-          .map((user) => user.login);
-
-        res.json(getResponseData(limitedUsers));
-      } else {
-        const usersLoginArray = getFilteredAndSortedUsersLogin(
-          users,
-          loginSubstring as string,
-          limit as number
-        );
-
-        res.json(getResponseData(usersLoginArray));
-      }
-    }
+  // TODO: throw erro if loginSubstring/limit is not string/number
+  const users = await UserModel.getUsers(
+    loginSubstring as string,
+    limit as number
   );
+
+  res.json(getResponseData(users));
 });
 
-app.get("/users/:id", (req, res) => {
-  const id = parseInt(req.params.id);
+app.get("/users/:id", async (req, res) => {
+  const id = req.params.id;
+  const user = await UserModel.getUserById(id);
 
-  pool.query(selectUserByIdQuery, [id], (error, results) => {
-    if (error) {
-      throw error;
-    }
+  if (!user) {
+    console.log(`User ${id} not found`);
+    return res.status(404).json(getErrorResponseData("User not found"));
+  }
 
-    const users = results.rows;
+  console.log(`User ${user.id} has been found`);
 
-    const user = users[0];
-
-    if (!user) {
-      console.log(`User ${id} not found`);
-      return res.status(404).json(getErrorResponseData("User not found"));
-    }
-
-    console.log(`User ${user.id} has been found`);
-
-    res
-      .status(200)
-      .json({ success: true, data: getUserDataWithoutPassword(user) });
-  });
+  res
+    .status(200)
+    .json({ success: true, data: getUserDataWithoutPassword(user) });
 });
 
 app.post("/users", validateUserBody, async (req, res) => {
-  const user = await addUserTransaction(req.body);
+  const user = await UserModel.addUser(req.body, "2");
 
   res.status(201).json(getResponseData(getUserDataWithoutPassword(user)));
 });
 
-app.put("/users/:id", validateUserBody, (req, res) => {
-  const id = parseInt(req.params.id);
+app.put("/users/:id", validateUserBody, async (req, res) => {
+  const id = req.params.id;
 
-  const { login, password, age } = req.body;
+  const user = await UserModel.updateUser(req.body, id);
 
-  pool.query(
-    "UPDATE users SET login = $1, password = $2, age = $3 WHERE id = $4 RETURNING *",
-    [login, password, age, id],
-    (error, results) => {
-      if (error) {
-        throw error;
-      }
+  if (!user) {
+    return res.status(404).json(getErrorResponseData("User not found"));
+  }
 
-      const user = results.rows[0];
-
-      if (!user) {
-        return res.status(404).json(getErrorResponseData("User not found"));
-      }
-
-      console.log(
-        `User ${user.id} has been updated`,
-        `new user data: ${JSON.stringify(user)}`
-      );
-
-      res.json(getResponseData(getUserDataWithoutPassword(user)));
-    }
+  console.log(
+    `User ${user.id} has been updated`,
+    `new user data: ${JSON.stringify(user)}`
   );
+
+  res.json(getResponseData(getUserDataWithoutPassword(user)));
 });
 
 app.delete("/users/:id", async (req, res) => {
-  const id = parseInt(req.params.id);
+  const id = req.params.id;
 
-  const deletedUser = await removeUserTransaction(id);
+  const deletedUser = await UserModel.deleteUser(id);
+
   if (!deletedUser) {
     return res.status(404).json(getErrorResponseData("User not found"));
   }
@@ -139,18 +94,6 @@ app.delete("/users/:id", async (req, res) => {
   );
 
   res.json(getResponseData(getUserDataWithoutPassword(deletedUser)));
-});
-
-app.get("/groups", (_, res) => {
-  pool.query("SELECT * FROM groups", (error, results) => {
-    if (error) {
-      throw error;
-    }
-
-    const groups = results.rows;
-    res.json(getResponseData(groups));
-    console.log({ groups });
-  });
 });
 
 app.get("/groups", (_, res) => {
@@ -184,7 +127,7 @@ app.get("/groups/:id", (req, res) => {
 });
 
 app.post("/groups", validateGroupBody, async (req, res) => {
-  const group = await addGroup(req.body);
+  const group = await GroupModel.addGroup(req.body);
   res.status(201).json(getResponseData(group));
 });
 
@@ -211,8 +154,8 @@ app.put("/groups/:id", validateGroupBody, (req, res) => {
 });
 
 app.delete("/groups/:id", async (req, res) => {
-  const id = parseInt(req.params.id);
-  const deletedGroup = await removeGroupTransaction(id);
+  const id = req.params.id;
+  const deletedGroup = await GroupModel.deleteGroup(id);
   if (deletedGroup) {
     console.log(
       `DELETE /groups request performed. Group ${deletedGroup.id} has been deleted`

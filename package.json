@@ -30,7 +30,6 @@
     "express-joi-validation": "^5.0.1",
     "joi": "^17.7.0",
     "pg": "^8.8.0",
-    "sequelize": "^6.28.0",
-    "uuid": "^9.0.0"
+    "sequelize": "^6.28.0"
   }
 }

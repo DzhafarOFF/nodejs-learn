@@ -1,6 +1,6 @@
 import Joi from "joi";
 import { createValidator } from "express-joi-validation";
-import { Permission } from "./group";
+import { EPermission } from "./models/group";
 
 const validator = createValidator();
 
@@ -18,7 +18,7 @@ const groupSchema = Joi.object({
   name: Joi.string().required(),
   permissions: Joi.array()
     .required()
-    .items(Joi.string().valid(...Object.values(Permission))),
+    .items(Joi.string().valid(...Object.values(EPermission))),
 });
 
 export const validateUserBody = validator.body(requiredUserSchema);
