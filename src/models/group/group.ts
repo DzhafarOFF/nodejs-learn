@@ -37,8 +37,6 @@ export class GroupModel {
       );
       const group = groupQueryResult.rows[0];
 
-      console.log(`Group ${group.id} has been added`);
-
       return group;
     } catch (err) {
       throw err;
@@ -54,7 +52,7 @@ export class GroupModel {
       );
       await UserGroupModel.removeUserGroupByGroupId(groupId);
       await pool.query("COMMIT");
-      console.log("Group removed successfully!");
+
       const deletedGroup = deletGroupQueryResult.rows[0];
       return deletedGroup;
     } catch (err) {

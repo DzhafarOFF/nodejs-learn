@@ -48,8 +48,6 @@ export class UserModel {
 
       await UserGroupModel.addUserToGroup(user.id, groupId);
 
-      console.log(`IUser ${user.id} has been added`);
-
       return user;
     } catch (err) {
       throw err;
@@ -85,8 +83,6 @@ export class UserModel {
       );
       await UserGroupModel.removeUserGroupByUserId(userId);
       await pool.query("COMMIT");
-
-      console.log(`User ${userId} removed(soft) successfully!`);
 
       const deletedUser = deletUserQueryResult.rows[0];
 

@@ -4,10 +4,6 @@ import { GroupModel } from "../models/group";
 import { UserModel } from "../models/user";
 import { UserGroupModel } from "../models/userGroup";
 
-const logError = (err: Error) => {
-  console.log(err);
-};
-
 const dropDatabaseQueryIfExist = `DROP DATABASE IF EXISTS ${config.DATA_BASE_NAME};`;
 const createDatabaseQuery = `CREATE DATABASE ${config.DATA_BASE_NAME};`;
 
@@ -18,8 +14,8 @@ export const createDB = async () => {
   });
 
   try {
-    await client.connect().catch(logError);
-    await client.query(dropDatabaseQueryIfExist).catch(logError);
+    await client.connect();
+    await client.query(dropDatabaseQueryIfExist);
 
     const pool = new Pool({
       database: config.DATA_BASE_NAME,
@@ -54,6 +50,6 @@ export const createDB = async () => {
     await pool.end();
     await client.end();
   } catch (error: any) {
-    logError(error);
+    throw error;
   }
 };

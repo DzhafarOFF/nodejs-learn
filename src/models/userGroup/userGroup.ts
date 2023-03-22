@@ -45,16 +45,7 @@ export class UserGroupModel {
 
       await pool.query(deleteUsersGroupsTableByUserIdQuery, [userId]);
 
-      const usersGroupsQueryResult = await pool.query(
-        insertUsersGroupsTableQuery,
-        [userId, groupId]
-      );
-
-      const userGroupData = usersGroupsQueryResult.rows[0];
-
-      console.log(
-        `New user-group relation created user id:${userGroupData.user_id} group id:${userGroupData.group_id}`
-      );
+      await pool.query(insertUsersGroupsTableQuery, [userId, groupId]);
 
       await pool.query("COMMIT");
     } catch (err) {
@@ -68,8 +59,6 @@ export class UserGroupModel {
       for (const userId of usersIds) {
         await UserGroupModel.addUserToGroup(userId, groupId);
       }
-
-      console.log("FINISH: Users assigned to provided groups");
     } catch (e) {
       throw e;
     }
