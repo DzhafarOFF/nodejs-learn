@@ -1,5 +1,6 @@
 import Joi from "joi";
 import { createValidator } from "express-joi-validation";
+import { EPermission } from "./models/group";
 
 const validator = createValidator();
 
@@ -7,10 +8,19 @@ const validator = createValidator();
 
 const PASSWORD_REG_EXP = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,16}$/;
 
-const requiredSchema = Joi.object({
+const requiredUserSchema = Joi.object({
   login: Joi.string().alphanum().min(3).max(30).required(),
   password: Joi.string().pattern(PASSWORD_REG_EXP).required(),
   age: Joi.number().integer().min(4).max(130).required(),
 });
 
-export const validateBody = validator.body(requiredSchema);
+const groupSchema = Joi.object({
+  name: Joi.string().required(),
+  permissions: Joi.array()
+    .required()
+    .items(Joi.string().valid(...Object.values(EPermission))),
+});
+
+export const validateUserBody = validator.body(requiredUserSchema);
+
+export const validateGroupBody = validator.body(groupSchema);

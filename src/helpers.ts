@@ -1,7 +1,7 @@
-import { User } from "./user";
+import { IUser } from "./models/user";
 
 export const getFilteredAndSortedUsersLogin = (
-  users: User[],
+  users: IUser[],
   searchString: string,
   limit: number
 ) => {
@@ -15,7 +15,7 @@ export const getFilteredAndSortedUsersLogin = (
 export const getUserDataWithoutPassword = ({
   password,
   ...safeUserData
-}: User) => ({ ...safeUserData });
+}: IUser) => ({ ...safeUserData });
 
 export const getErrorResponseData = (message: string) => {
   return { success: false, error: { message } };

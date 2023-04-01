@@ -23,7 +23,7 @@ const getConfig = (): Config => {
       throw new Error(`Missing key ${key} in config.env`);
     }
   }
-  console.log({ env });
+
   return {
     DATA_BASE_NAME: process.env.DATA_BASE_NAME!,
     DATA_BASE_HOST: process.env.DATA_BASE_HOST!,
