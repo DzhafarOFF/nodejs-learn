@@ -1,4 +1,4 @@
-import express, { NextFunction, Request, Response } from "express";
+import express from "express";
 import { Pool } from "pg";
 import { config } from "./config";
 import {
@@ -18,6 +18,13 @@ import {
 import jwt from "jsonwebtoken";
 import cors from "cors";
 import { jwtMiddleware } from "./auth";
+import {
+  createUserController,
+  deleteUserController,
+  getAllUsersController,
+  getUserByIdController,
+  updateUserController,
+} from "./controllers";
 
 createDB();
 
@@ -36,66 +43,15 @@ app.use(cors());
 app.use(jwtMiddleware);
 app.use(apiLoggerMiddleware);
 
-app.get("/users", async (req, res) => {
-  const { loginSubstring, limit = 20 } = req.query;
+app.get("/users", getAllUsersController);
 
-  // TODO: throw erro if loginSubstring/limit is not string/number
-  const users = await UserModel.getUsers(
-    loginSubstring as string,
-    limit as number
-  );
+app.get("/users/:id", getUserByIdController);
 
-  res.json(getResponseData(users));
-});
+app.post("/users", validateUserBody, createUserController);
 
-app.get("/users/:id", async (req, res) => {
-  const id = req.params.id;
-  const user = await UserModel.getUserById(id);
+app.put("/users/:id", validateUserBody, updateUserController);
 
-  if (!user) {
-    return res.status(404).json(getErrorResponseData("User not found"));
-  }
-
-  res
-    .status(200)
-    .json({ success: true, data: getUserDataWithoutPassword(user) });
-});
-
-app.post("/users", validateUserBody, async (req, res) => {
-  const groupsResult = await GroupModel.getGroups();
-
-  const readAndWriteGroup = groupsResult[1]; // default assignment to read and write group
-
-  const user = await UserModel.addUser(req.body, readAndWriteGroup.id);
-
-  res.status(201).json(getResponseData(getUserDataWithoutPassword(user)));
-});
-
-app.put("/users/:id", validateUserBody, async (req, res) => {
-  const id = req.params.id;
-
-  const user = await UserModel.updateUser(req.body, id);
-
-  if (!user) {
-    return res.status(404).json(getErrorResponseData("User not found"));
-  }
-
-  res.json(getResponseData(getUserDataWithoutPassword(user)));
-});
-
-app.delete("/users/:id", async (req, res) => {
-  const id = req.params.id;
-
-  const deletedUser = await UserModel.deleteUser(id);
-
-  if (!deletedUser) {
-    return res.status(404).json(getErrorResponseData("User not found"));
-  }
-
-  `DELETE /users request performed. User ${deletedUser.id} has been deleted(soft)`;
-
-  res.json(getResponseData(getUserDataWithoutPassword(deletedUser)));
-});
+app.delete("/users/:id", deleteUserController);
 
 app.get("/groups", (_, res) => {
   pool.query("SELECT * FROM groups", (error, results) => {
