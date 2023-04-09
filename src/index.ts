@@ -19,9 +19,13 @@ import jwt from "jsonwebtoken";
 import cors from "cors";
 import { jwtMiddleware } from "./auth";
 import {
+  createGroupController,
   createUserController,
+  deleteGroupController,
   deleteUserController,
+  getAllGroupsController,
   getAllUsersController,
+  getGroupByIDController,
   getUserByIdController,
   updateUserController,
 } from "./controllers";
@@ -53,62 +57,16 @@ app.put("/users/:id", validateUserBody, updateUserController);
 
 app.delete("/users/:id", deleteUserController);
 
-app.get("/groups", (_, res) => {
-  pool.query("SELECT * FROM groups", (error, results) => {
-    if (error) {
-      throw error;
-    }
+app.get("/groups", getAllGroupsController);
 
-    const groups = results.rows;
-    res.json(getResponseData(groups));
-  });
-});
+app.get("/groups/:id", getGroupByIDController);
 
-app.get("/groups/:id", (req, res) => {
-  const id = parseInt(req.params.id);
-  pool.query("SELECT * FROM groups WHERE id = $1", [id], (error, results) => {
-    if (error) {
-      throw error;
-    }
-    const group = results.rows[0];
-    if (!group) {
-      return res.status(404).json(getErrorResponseData("Group not found"));
-    }
+app.post("/groups", validateGroupBody, createGroupController);
 
-    res.status(200).json(getResponseData(group));
-  });
-});
+app.put("/groups/:id", validateGroupBody);
 
-app.post("/groups", validateGroupBody, async (req, res) => {
-  const group = await GroupModel.addGroup(req.body);
-  res.status(201).json(getResponseData(group));
-});
+app.delete("/groups/:id", deleteGroupController);
 
-app.put("/groups/:id", validateGroupBody, (req, res) => {
-  const id = parseInt(req.params.id);
-  const { name, permissions } = req.body;
-  pool.query(
-    "UPDATE groups SET name = $1, permissions = $2 WHERE id = $3 RETURNING *",
-    [name, permissions, id],
-    (error, results) => {
-      if (error) {
-        throw error;
-      }
-
-      const group = results.rows[0];
-
-      res.status(200).json(getResponseData(group));
-    }
-  );
-});
-
-app.delete("/groups/:id", async (req, res) => {
-  const id = req.params.id;
-  const deletedGroup = await GroupModel.deleteGroup(id);
-  if (deletedGroup) {
-    res.status(200).json();
-  }
-});
 // Login method
 app.post("/login", validateUseLogin, async (req, res) => {
   const { login, password } = req.body;

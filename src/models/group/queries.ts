@@ -9,3 +9,6 @@ export const insertPredefinedGroups = `INSERT INTO groups (name, permissions) VA
   (group) => `('${group.name}', '{${group.permissions}}')`
 ).join(",")}`;
 export const selectAllGroups = "SELECT * FROM groups";
+export const getGroupByIDQuery = "SELECT * FROM groups WHERE id = $1";
+export const updateGroupByIDQuery =
+  "UPDATE groups SET name = $1, permissions = $2 WHERE id = $3 RETURNING *";
