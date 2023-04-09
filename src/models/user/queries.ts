@@ -14,3 +14,5 @@ export const selectUserByIdQuery = "SELECT * FROM users WHERE id = $1";
 export const updateUserQuery =
   "UPDATE users SET login = $1, password = $2, age = $3 WHERE id = $4 RETURNING *";
 export const selectAllUsers = "SELECT * FROM users";
+export const getUserByLoginAndPasswordQuery =
+  "SELECT * FROM users WHERE login = $1 AND password = $2";

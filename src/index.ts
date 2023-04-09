@@ -1,4 +1,4 @@
-import express from "express";
+import express, { NextFunction, Request, Response } from "express";
 import { Pool } from "pg";
 import { config } from "./config";
 import {
@@ -10,7 +10,14 @@ import { createDB } from "./loaders";
 import { apiErrorLoggerMiddleware, apiLoggerMiddleware } from "./loggers";
 import { GroupModel } from "./models/group";
 import { UserModel } from "./models/user";
-import { validateGroupBody, validateUserBody } from "./validation";
+import {
+  validateGroupBody,
+  validateUseLogin,
+  validateUserBody,
+} from "./validation";
+import jwt from "jsonwebtoken";
+import cors from "cors";
+import { jwtMiddleware } from "./auth";
 
 createDB();
 
@@ -25,6 +32,8 @@ const pool = new Pool({
 });
 
 app.use(express.json());
+app.use(cors());
+app.use(jwtMiddleware);
 app.use(apiLoggerMiddleware);
 
 app.get("/users", async (req, res) => {
@@ -142,6 +151,21 @@ app.delete("/groups/:id", async (req, res) => {
   const deletedGroup = await GroupModel.deleteGroup(id);
   if (deletedGroup) {
     res.status(200).json();
+  }
+});
+// Login method
+app.post("/login", validateUseLogin, async (req, res) => {
+  const { login, password } = req.body;
+
+  const user = await UserModel.getUserByLoginAndPassword(login, password);
+
+  if (user) {
+    const token = jwt.sign({ id: user.id }, config.JWT_SECRET_KEY, {
+      expiresIn: "1h",
+    });
+    res.status(200).json({ success: true, token });
+  } else {
+    res.status(401).json(getErrorResponseData("Invalid username or password"));
   }
 });
 

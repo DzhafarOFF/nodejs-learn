@@ -4,6 +4,7 @@ import { getFilteredAndSortedUsersLogin } from "../../helpers";
 import { UserGroupModel } from "../userGroup";
 import {
   createUsersTableQuery,
+  getUserByLoginAndPasswordQuery,
   insertPredefinedUsersQuery,
   insertUserQuery,
   removeUserSoftByIdQuery,
@@ -136,6 +137,21 @@ export class UserModel {
       const queryResults = await pool.query(selectAllUsers);
       const users = queryResults.rows;
       return users;
+    } catch (e) {
+      throw e;
+    }
+  }
+
+  static async getUserByLoginAndPassword(
+    login: string,
+    password: string
+  ): Promise<IUser> {
+    try {
+      const queryResults = await pool.query(getUserByLoginAndPasswordQuery, [
+        login,
+        password,
+      ]);
+      return queryResults.rows[0];
     } catch (e) {
       throw e;
     }

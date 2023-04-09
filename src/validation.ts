@@ -14,6 +14,11 @@ const requiredUserSchema = Joi.object({
   age: Joi.number().integer().min(4).max(130).required(),
 });
 
+const requiredUserLoginSchema = Joi.object({
+  login: Joi.string().alphanum().min(3).max(30).required(),
+  password: Joi.string().pattern(PASSWORD_REG_EXP).required(),
+});
+
 const groupSchema = Joi.object({
   name: Joi.string().required(),
   permissions: Joi.array()
@@ -24,3 +29,5 @@ const groupSchema = Joi.object({
 export const validateUserBody = validator.body(requiredUserSchema);
 
 export const validateGroupBody = validator.body(groupSchema);
+
+export const validateUseLogin = validator.body(requiredUserLoginSchema);
