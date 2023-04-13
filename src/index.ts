@@ -1,14 +1,9 @@
 import express from "express";
 import { Pool } from "pg";
 import { config } from "./config";
-import {
-  getErrorResponseData,
-  getResponseData,
-  getUserDataWithoutPassword,
-} from "./helpers";
+import { getErrorResponseData } from "./helpers";
 import { createDB } from "./loaders";
 import { apiErrorLoggerMiddleware, apiLoggerMiddleware } from "./loggers";
-import { GroupModel } from "./models/group";
 import { UserModel } from "./models/user";
 import {
   validateGroupBody,
@@ -34,7 +29,7 @@ createDB();
 
 const PORT = 3000;
 
-const app = express();
+export const app = express();
 
 const pool = new Pool({
   database: config.DATA_BASE_NAME,

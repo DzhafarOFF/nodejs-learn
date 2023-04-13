@@ -4,12 +4,10 @@ import { UserGroupModel } from "../userGroup";
 import {
   createGroupsTableQuery,
   deleteGroupByIdQuery,
-  getGroupByID,
   getGroupByIDQuery,
   insertGroupsTableQuery,
   insertPredefinedGroups,
   selectAllGroups,
-  updateGroupByID,
   updateGroupByIDQuery,
 } from "./queries";
 import { EPermission, IGroup, IGroupInputDTO } from "./types";
