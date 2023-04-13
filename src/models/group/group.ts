@@ -4,11 +4,13 @@ import { UserGroupModel } from "../userGroup";
 import {
   createGroupsTableQuery,
   deleteGroupByIdQuery,
+  getGroupByIDQuery,
   insertGroupsTableQuery,
   insertPredefinedGroups,
   selectAllGroups,
+  updateGroupByIDQuery,
 } from "./queries";
-import { IGroup, IGroupInputDTO } from "./types";
+import { EPermission, IGroup, IGroupInputDTO } from "./types";
 
 const pool = new Pool({
   database: config.DATA_BASE_NAME,
@@ -65,6 +67,34 @@ export class GroupModel {
       const groupQueryResult = await pool.query<IGroup>(selectAllGroups);
 
       return groupQueryResult.rows;
+    } catch (err) {
+      throw err;
+    }
+  }
+  static async getGroupByID(id: string) {
+    try {
+      const groupQueryResult = await pool.query<IGroup>(getGroupByIDQuery, [
+        id,
+      ]);
+
+      return groupQueryResult.rows[0];
+    } catch (err) {
+      throw err;
+    }
+  }
+  static async updateGroupByID(
+    id: string,
+    name: string,
+    permissions: EPermission[]
+  ) {
+    try {
+      const groupQueryResult = await pool.query<IGroup>(updateGroupByIDQuery, [
+        name,
+        permissions,
+        id,
+      ]);
+
+      return groupQueryResult.rows[0];
     } catch (err) {
       throw err;
     }
